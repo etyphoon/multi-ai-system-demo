@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多AI协同系统 - 工作流可视化原型</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --feishu-blue: #3370ff;
+            --feishu-gray: #f5f5f5;
+            --feishu-border: #e4e6eb;
+            --feishu-text: #1f2329;
+            --feishu-text-secondary: #646a73;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--feishu-text);
+            background-color: #fafafa;
+        }
+        
+        .feishu-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        
+        .feishu-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--feishu-border);
+            background: linear-gradient(135deg, #3370ff 0%, #5a8cff 100%);
+            color: white;
+        }
+        
+        .feishu-topic-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .feishu-topic-meta {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .feishu-ai-role {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .role-total-control { background-color: #e6f4ff; color: #0066cc; }
+        .role-decomposer { background-color: #f0f7ff; color: #0052cc; }
+        .role-executor { background-color: #f6ffed; color: #389e0d; }
+        .role-inspector { background-color: #fff7e6; color: #d46b08; }
+        .role-optimizer { background-color: #f9f0ff; color: #722ed1; }
+        .role-implementer { background-color: #f0f5ff; color: #1d39c4; }
+        
+        .timeline-container {
+            position: relative;
+            padding: 24px;
+        }
+        
+        .timeline-line {
+            position: absolute;
+            left: 40px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: var(--feishu-border);
+        }
+        
+        .timeline-item {
+            display: flex;
+            margin-bottom: 32px;
+            position: relative;
+        }
+        
+        .timeline-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            z-index: 1;
+            flex-shrink: 0;
+        }
+        
+        .timeline-content {
+            flex: 1;
+            background: var(--feishu-gray);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid var(--feishu-border);
+            transition: all 0.2s ease;
+        }
+        
+        .timeline-content:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+        
+        .timeline-time {
+            font-size: 13px;
+            color: var(--feishu-text-secondary);
+            margin-bottom: 4px;
+        }
+        
+        .timeline-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .timeline-details {
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--feishu-text);
+        }
+        
+        .toggle-details {
+            color: var(--feishu-blue);
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 8px;
+            display: inline-block;
+        }
+        
+        .details-panel {
+            display: none;
+            margin-top: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid var(--feishu-border);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .details-panel.active {
+            display: block;
+        }
+        
+        .version-comparison {
+            display: none;
+            margin-top: 24px;
+            border: 1px solid var(--feishu-border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .version-comparison.active {
+            display: block;
+        }
+        
+        .version-header {
+            display: flex;
+            background: var(--feishu-gray);
+            border-bottom: 1px solid var(--feishu-border);
+        }
+        
+        .version-tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .version-tab.active {
+            border-bottom-color: var(--feishu-blue);
+            color: var(--feishu-blue);
+        }
+        
+        .version-content {
+            padding: 20px;
+            display: none;
+        }
+        
+        .version-content.active {
+            display: block;
+        }
+        
+        .diff-added {
+            background-color: #f6ffed;
+            color: #389e0d;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        
+        .diff-removed {
+            background-color: #fff1f0;
+            color: #cf1322;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        
+        .interaction-hint {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            max-width: 300px;
+            font-size: 14px;
+            border: 1px solid var(--feishu-border);
+            z-index: 100;
+        }
+        
+        .close-hint {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            cursor: pointer;
+            color: var(--feishu-text-secondary);
+        }
+        
+        @media (max-width: 768px) {
+            .timeline-line {
+                left: 20px;
+            }
+            
+            .timeline-icon {
+                width: 24px;
+                height: 24px;
+                margin-right: 12px;
+            }
+            
+            .feishu-topic-title {
+                font-size: 18px;
+            }
+            
+            .feishu-topic-meta span {
+                display: block;
+                margin-left: 0;
+                margin-bottom: 8px;
+            }
+            
+            .feishu-topic-meta span.ml-4 {
+                margin-left: 0;
+            }
+            
+            .grid-cols-1 {
+                grid-template-columns: 1fr;
+            }
+            
+            .p-6 {
+                padding: 16px;
+            }
+            
+            .timeline-container {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="feishu-container mt-8 mb-8">
+        <div class="feishu-header">
+            <div class="feishu-topic-title">任务#001: 为「解放思想・解放生产力」抖音思想号创作本周内容</div>
+            <div class="feishu-topic-meta">
+                <span><i class="fas fa-user-circle mr-1"></i> 发起人: 用户</span>
+                <span class="ml-4"><i class="fas fa-clock mr-1"></i> 创建时间: 2026-02-27 09:00</span>
+                <span class="ml-4"><i class="fas fa-users mr-1"></i> AI参与角色: 6个</span>
+                <span class="ml-4"><i class="fas fa-check-circle mr-1"></i> 状态: 已完成</span>
+            </div>
+        </div>
+        
+        <div class="p-6">
+            <div class="mb-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h3 class="text-lg font-semibold mb-3">多任务管理视图</h3>
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <button class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-200 transition active task-tab" onclick="switchTask('task1')">任务#001 (已完成)</button>
+                    <button class="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition task-tab" onclick="switchTask('task2')">任务#002 (执行中)</button>
+                    <button class="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-medium hover:bg-yellow-200 transition task-tab" onclick="switchTask('task3')">任务#003 (预审中)</button>
+                </div>
+                <div class="text-sm text-gray-600">
+                    <p><i class="fas fa-info-circle mr-1"></i> 当前展示: <span id="currentTask">任务#001</span></p>
+                    <p class="mt-1"><i class="fas fa-clock mr-1"></i> 最后更新: <span id="lastUpdate">2026-02-27 09:45</span> <span id="wsStatus" class="ml-2 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">实时连接</span></p>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3">AI角色团队</h3>
+                <div>
+                    <span class="feishu-ai-role role-total-control"><i class="fas fa-crown mr-2"></i>总控</span>
+                    <span class="feishu-ai-role role-decomposer"><i class="fas fa-sitemap mr-2"></i>任务拆解师</span>
+                    <span class="feishu-ai-role role-executor"><i class="fas fa-code mr-2"></i>执行师</span>
+                    <span class="feishu-ai-role role-inspector"><i class="fas fa-search mr-2"></i>质检师</span>
+                    <span class="feishu-ai-role role-optimizer"><i class="fas fa-magic mr-2"></i>优化师</span>
+                    <span class="feishu-ai-role role-implementer"><i class="fas fa-rocket mr-2"></i>落地师</span>
+                </div>
+            </div>
+            
+            <h3 class="text-lg font-semibold mb-4">任务执行时间轴</h3>
+            <div class="timeline-container">
+                <div class="timeline-line"></div>
+                
+                <!-- 时间轴项目1 -->
+                <div class="timeline-item">
+                    <div class="timeline-icon role-total-control">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">09:00 - 09:05</div>
+                        <div class="timeline-title">总控接收任务并确认</div>
+                        <div class="timeline-details">
+                            总控AI接收用户指令，分析任务背景和目标，确认执行路径和资源分配。
+                            <div class="toggle-details" onclick="toggleDetails('detail1')">查看详情 <i class="fas fa-chevron-down"></i></div>
+                            <div id="detail1" class="details-panel">
+                                <p><strong>任务分析:</strong> 为抖音思想号"解放思想・解放生产力"创作本周内容，需体现深度思考和实用价值。</p>
+                                <p><strong>决策点:</strong> 内容形式选择短视频脚本还是深度文章？根据账号定位，建议采用短视频脚本+配套文案的组合形式。</p>
+                                <p><strong>资源分配:</strong> 启动6个AI角色协同工作，预计总耗时45分钟。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 时间轴项目2 -->
+                <div class="timeline-item">
+                    <div class="timeline-icon role-decomposer">
+                        <i class="fas fa-sitemap"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">09:05 - 09:15</div>
+                        <div class="timeline-title">任务拆解师拆分步骤</div>
+                        <div class="timeline-details">
+                            将模糊任务拆解为可落地的子任务，明确每个步骤的要求、时长和输出格式。
+                            <div class="toggle-details" onclick="toggleDetails('detail2')">查看详情 <i class="fas fa-chevron-down"></i></div>
+                            <div id="detail2" class="details-panel">
+                                <p><strong>拆解结果:</strong></p>
+                                <ol class="list-decimal pl-5">
+                                    <li>调研抖音思想号热门话题趋势（5分钟）</li>
+                                    <li>确定本周核心主题和角度（3分钟）</li>
+                                    <li>撰写短视频脚本初稿（10分钟）</li>
+                                    <li>创作配套文案和标签（5分钟）</li>
+                                    <li>视觉素材建议（3分钟）</li>
+                                </ol>
+                                <p><strong>输出格式:</strong> 结构化任务清单，包含时间预估和质量标准。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 时间轴项目3 -->
+                <div class="timeline-item">
+                    <div class="timeline-icon role-executor">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">09:15 - 09:30</div>
+                        <div class="timeline-title">执行师产出初稿</div>
+                        <div class="timeline-details">
+                            基于拆解后的任务，产出核心内容方案，包括短视频脚本、文案和视觉建议。
+                            <div class="toggle-details" onclick="toggleDetails('detail3')">查看详情 <i class="fas fa-chevron-down"></i></div>
+                            <div id="detail3" class="details-panel">
+                                <p><strong>产出内容:</strong></p>
+                                <ul class="list-disc pl-5">
+                                    <li>短视频脚本: "如何用AI工具提升工作效率3倍" (时长60秒)</li>
+                                    <li>配套文案: 5个版本，适配不同发布场景</li>
+                                    <li>视觉建议: 蓝色科技感主题，动态数据可视化效果</li>
+                                    <li>标签建议: #AI生产力 #解放思想 #工具推荐</li>
+                                </ul>
+                                <button class="mt-3 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-200 transition" onclick="showVersion('v1')">查看初稿版本</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 时间轴项目4 -->
+                <div class="timeline-item">
+                    <div class="timeline-icon role-inspector">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">09:30 - 09:35</div>
+                        <div class="timeline-title">质检师审核并提出问题</div>
+                        <div class="timeline-details">
+                            检查执行成果是否符合要求，列出问题清单和优化建议。
+                            <div class="toggle-details" onclick="toggleDetails('detail4')">查看详情 <i class="fas fa-chevron-down"></i></div>
+                            <div id="detail4" class="details-panel">
+                                <p><strong>发现问题:</strong></p>
+                                <ul class="list-disc pl-5">
+                                    <li>脚本开头不够吸引人，需要在3秒内抓住观众注意力</li>
+                                    <li>部分专业术语过多，需要更通俗化表达</li>
+                                    <li>视觉建议不够具体，需要提供参考样式或模板</li>
+                                    <li>缺少数据支撑，建议加入具体案例或统计数据</li>
+                                </ul>
+                                <p><strong>优化建议:</strong> 修改脚本开头，简化专业术语，补充具体视觉参考，增加案例数据。</p>
+                                <button class="mt-3 px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-medium hover:bg-yellow-200 transition" onclick="showComparison()">查看优化前后对比</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 时间轴项目5 -->
+                <div class="timeline-item">
+                    <div class="timeline-icon role-optimizer">
+                        <i class="fas fa-magic"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">09:35 - 09:42</div>
+                        <div class="timeline-title">优化师针对性修改</div>
+                        <div class="timeline-details">
+                            根据质检问题，对初稿进行修改升级，输出优化版本。
+                            <div class="toggle-details" onclick="toggleDetails('detail5')">查看详情 <i class="fas fa-chevron-down"></i></div>
+                            <div id="detail5" class="details-panel">
+                                <p><strong>修改内容:</strong></p>
+                                <ul class="list-disc pl-5">
+                                    <li>脚本开头重写: "每天浪费3小时在重复工作？用这个AI工具，3分钟搞定！"</li>
+                                    <li>专业术语简化: 将"自然语言处理"改为"智能对话"</li>
+                                    <li>补充视觉参考: 提供3个具体的设计样式截图建议</li>
+                                    <li>增加案例数据: 加入"某公司使用后效率提升67%"的具体案例</li>
+                                </ul>
+                                <button class="mt-3 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-200 transition" onclick="showVersion('v2')">查看优化版本</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 时间轴项目6 -->
+                <div class="timeline-item">
+                    <div class="timeline-icon role-implementer">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">09:42 - 09:45</div>
+                        <div class="timeline-title">落地师整理最终成果</div>
+                        <div class="timeline-details">
+                            将优化后的成果整理为用户可直接复用的最终版，标注使用方式和注意事项。
+                            <div class="toggle-details" onclick="toggleDetails('detail6')">查看详情 <i class="fas fa-chevron-down"></i></div>
+                            <div id="detail6" class="details-panel">
+                                <p><strong>最终交付物:</strong></p>
+                                <ul class="list-disc pl-5">
+                                    <li>完整短视频脚本（含分镜、台词、时长）</li>
+                                    <li>5个发布文案版本（适配不同平台）</li>
+                                    <li>视觉设计规范（配色、字体、样式）</li>
+                                    <li>发布 checklist（发布时间、标签、互动建议）</li>
+                                    <li>数据追踪模板（用于后续效果分析）</li>
+                                </ul>
+                                <p><strong>使用方式:</strong> 脚本可直接用于拍摄，文案可直接复制发布，设计规范可提供给设计师参考。</p>
+                                <button class="mt-3 px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition" onclick="downloadFinal()">模拟下载最终成果</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 版本对比区域 -->
+            <div id="versionComparison" class="version-comparison">
+                <div class="version-header">
+                    <div class="version-tab active" onclick="switchVersionTab('comparison')">优化前后对比</div>
+                    <div class="version-tab" onclick="switchVersionTab('v1')">初稿版本</div>
+                    <div class="version-tab" onclick="switchVersionTab('v2')">优化版本</div>
+                </div>
+                
+                <div id="comparisonContent" class="version-content active">
+                    <h4 class="font-semibold mb-3">脚本开头部分对比</h4>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <div class="text-sm font-medium text-gray-500 mb-2">优化前</div>
+                            <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <p>"大家好，今天我们来聊一聊自然语言处理技术在工作中的应用。自然语言处理是人工智能的一个重要分支..."</p>
+                                <div class="mt-2 text-xs text-red-500"><i class="fas fa-exclamation-triangle mr-1"></i> 问题: 开头平淡，专业术语多，3秒内无法吸引观众</div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-gray-500 mb-2">优化后</div>
+                            <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                                <p>"每天浪费3小时在重复工作？用这个AI工具，3分钟搞定！今天分享一个真实案例：某公司使用智能对话工具后，效率提升67%..."</p>
+                                <div class="mt-2 text-xs text-green-500"><i class="fas fa-check-circle mr-1"></i> 改进: 问题切入+解决方案+数据支撑，3秒抓住注意力</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h4 class="font-semibold mb-3 mt-6">术语简化对比</h4>
+                    <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-blue-200">
+                                    <th class="py-2 text-left">专业术语</th>
+                                    <th class="py-2 text-left">简化表达</th>
+                                    <th class="py-2 text-left">改进效果</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-blue-100">
+                                    <td class="py-2">自然语言处理 (NLP)</td>
+                                    <td class="py-2"><span class="diff-added">智能对话</span></td>
+                                    <td class="py-2">更易理解，减少认知负担</td>
+                                </tr>
+                                <tr class="border-b border-blue-100">
+                                    <td class="py-2">算法优化</td>
+                                    <td class="py-2"><span class="diff-added">智能改进</span></td>
+                                    <td class="py-2">更贴近用户日常表达</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-2">模型训练</td>
+                                    <td class="py-2"><span class="diff-added">学习过程</span></td>
+                                    <td class="py-2">直观易懂，降低技术门槛</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="v1Content" class="version-content">
+                    <h4 class="font-semibold mb-3">初稿版本 - 短视频脚本</h4>
+                    <div class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <p><strong>标题:</strong> 自然语言处理技术在工作中的应用</p>
+                        <p><strong>时长:</strong> 60秒</p>
+                        <p><strong>开场:</strong> 大家好，今天我们来聊一聊自然语言处理技术在工作中的应用。自然语言处理是人工智能的一个重要分支，它可以帮助我们...</p>
+                        <p><strong>核心内容:</strong> 1. 自然语言处理的基本原理 2. 常见应用场景 3. 工具推荐</p>
+                        <p><strong>结尾:</strong> 以上就是今天的分享，希望对大家有所帮助。</p>
+                        <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p class="text-sm text-yellow-700"><i class="fas fa-exclamation-triangle mr-1"></i> <strong>质检反馈:</strong> 开头不够吸引人，专业术语过多，缺少具体案例和数据支撑。</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="v2Content" class="version-content">
+                    <h4 class="font-semibold mb-3">优化版本 - 短视频脚本</h4>
+                    <div class="p-4 bg-green-50 rounded-lg border border-green-200">
+                        <p><strong>标题:</strong> 每天浪费3小时？用AI工具3分钟搞定！</p>
+                        <p><strong>时长:</strong> 60秒</p>
+                        <p><strong>开场:</strong> (视觉: 时钟快速转动+焦虑表情) 每天浪费3小时在重复工作？用这个AI工具，3分钟搞定！(视觉: 工具界面展示)</p>
+                        <p><strong>核心内容:</strong> 1. 真实案例: 某公司使用智能对话工具后，效率提升67% 2. 具体操作: 如何用智能对话处理邮件、会议纪要、报告撰写 3. 工具推荐: 3个免费工具+使用技巧</p>
+                        <p><strong>结尾:</strong> 立即尝试这些工具，释放你的时间，关注真正重要的事！(视觉: 自由飞翔的意象)</p>
+                        <div class="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <p class="text-sm text-green-700"><i class="fas fa-check-circle mr-1"></i> <strong>优化效果:</strong> 问题切入+解决方案+数据支撑，3秒抓住注意力，语言通俗易懂，提供具体操作指南。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-8 p-6 bg-purple-50 rounded-xl border border-purple-200">
+                <h3 class="text-lg font-semibold mb-4">系统性能监控仪表盘</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-white p-4 rounded-lg border border-gray-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-medium text-gray-700">CPU使用率</h4>
+                            <span class="text-sm font-semibold text-green-600" id="cpuUsage">42%</span>
+                        </div>
+                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-green-500" style="width: 42%"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">AI推理负载</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg border border-gray-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-medium text-gray-700">内存占用</h4>
+                            <span class="text-sm font-semibold text-blue-600" id="memoryUsage">68%</span>
+                        </div>
+                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-blue-500" style="width: 68%"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">任务状态缓存</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg border border-gray-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-medium text-gray-700">任务完成率</h4>
+                            <span class="text-sm font-semibold text-purple-600" id="taskCompletion">85%</span>
+                        </div>
+                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-purple-500" style="width: 85%"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">本周累计</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg border border-gray-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-medium text-gray-700">平均响应时间</h4>
+                            <span class="text-sm font-semibold text-yellow-600" id="avgResponse">3.2s</span>
+                        </div>
+                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-yellow-500" style="width: 64%"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">AI角色处理</p>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-lg border border-gray-200">
+                    <h4 class="font-medium mb-3">任务执行效率对比</h4>
+                    <div class="h-64 flex items-end space-x-2" id="taskComparisonChart">
+                        <!-- 图表通过JS动态生成 -->
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">显示当前活跃任务的执行效率指标对比</p>
+                </div>
+            </div>
+            
+            <div class="mt-8 p-6 bg-gray-50 rounded-xl border border-gray-200">
+                <h3 class="text-lg font-semibold mb-3">系统功能演示</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-4 bg-white rounded-lg border border-gray-200">
+                        <h4 class="font-medium mb-2"><i class="fas fa-plus-circle text-blue-500 mr-2"></i> 创建新任务</h4>
+                        <p class="text-sm text-gray-600 mb-3">模拟创建新的多AI协同任务，选择任务类型和参与角色。</p>
+                        <button class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-200 transition" onclick="demoNewTask()">演示创建任务</button>
+                    </div>
+                    
+                    <div class="p-4 bg-white rounded-lg border border-gray-200">
+                        <h4 class="font-medium mb-2"><i class="fas fa-sync-alt text-green-500 mr-2"></i> 执行闭环可视化</h4>
+                        <p class="text-sm text-gray-600 mb-3">展示"执行→质检→优化→再执行"的永动闭环过程。</p>
+                        <button class="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium hover:bg-green-200 transition" onclick="demoClosedLoop()">演示闭环流程</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="interactionHint" class="interaction-hint">
+        <div class="close-hint" onclick="closeHint()"><i class="fas fa-times"></i></div>
+        <h4 class="font-medium mb-2">交互提示</h4>
+        <p class="text-sm">点击时间轴项目中的"查看详情"可以展开详细信息，点击"查看版本"可以对比不同阶段的内容。</p>
+        <p class="text-sm mt-2">此原型展示了多AI协同系统的飞书话题式可视化界面。</p>
+    </div>
+    
+    <script>
+        // 切换详情面板显示/隐藏
+        function toggleDetails(id) {
+            const panel = document.getElementById(id);
+            panel.classList.toggle('active');
+            
+            // 切换图标
+            const toggleBtn = panel.previousElementSibling;
+            const icon = toggleBtn.querySelector('i');
+            if (panel.classList.contains('active')) {
+                icon.className = 'fas fa-chevron-up';
+                toggleBtn.innerHTML = '收起详情 <i class="fas fa-chevron-up"></i>';
+            } else {
+                icon.className = 'fas fa-chevron-down';
+                toggleBtn.innerHTML = '查看详情 <i class="fas fa-chevron-down"></i>';
+            }
+        }
+        
+        // 显示版本对比
+        function showComparison() {
+            const comparison = document.getElementById('versionComparison');
+            comparison.classList.add('active');
+            
+            // 滚动到对比区域
+            comparison.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        // 切换版本标签页
+        function switchVersionTab(tabName) {
+            // 更新标签状态
+            document.querySelectorAll('.version-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 更新内容显示
+            document.querySelectorAll('.version-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            document.getElementById(tabName + 'Content').classList.add('active');
+        }
+        
+        // 显示特定版本
+        function showVersion(version) {
+            const comparison = document.getElementById('versionComparison');
+            comparison.classList.add('active');
+            
+            // 切换到对应标签
+            document.querySelectorAll('.version-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.querySelector(`.version-tab[onclick="switchVersionTab('${version}')"]`).classList.add('active');
+            
+            // 显示对应内容
+            document.querySelectorAll('.version-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            document.getElementById(version + 'Content').classList.add('active');
+            
+            // 滚动到对比区域
+            comparison.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        // 模拟下载最终成果
+        function downloadFinal() {
+            alert('模拟下载: 已生成包含脚本、文案、设计规范的完整交付物包。在实际系统中，这将是一个ZIP文件或直接保存到指定目录。');
+        }
+        
+        // 演示创建新任务
+        function demoNewTask() {
+            alert('演示: 创建新任务对话框将打开，用户可以选择任务类型（内容创作/数据分析/项目管理等）、指定AI角色、设置优先级和截止时间。');
+        }
+        
+        // 演示闭环流程
+        function demoClosedLoop() {
+            alert('演示: 系统将展示完整的"执行→质检→优化→再执行"循环动画，突出每个AI角色的贡献和版本迭代过程。');
+        }
+        
+        // 关闭交互提示
+        function closeHint() {
+            document.getElementById('interactionHint').style.display = 'none';
+        }
+        
+        // 多任务切换功能
+        function switchTask(taskId) {
+            // 更新按钮状态
+            document.querySelectorAll('.feishu-header .feishu-topic-title').forEach(title => {
+                title.style.display = 'none';
+            });
+            document.querySelectorAll('.task-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 更新当前任务显示
+            document.getElementById('currentTask').textContent = taskId === 'task1' ? '任务#001' : taskId === 'task2' ? '任务#002' : '任务#003';
+            
+            // 模拟任务数据切换
+            const statusMap = {
+                task1: '已完成',
+                task2: '执行中', 
+                task3: '预审中'
+            };
+            const statusColor = {
+                task1: 'green',
+                task2: 'blue',
+                task3: 'yellow'
+            };
+            
+            // 更新状态显示
+            document.querySelector('.feishu-topic-meta span:nth-child(4)').innerHTML = 
+                `<i class="fas fa-check-circle mr-1"></i> 状态: <span class="text-${statusColor[taskId]}-600">${statusMap[taskId]}</span>`;
+            
+            // 更新最后更新时间
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = 
+                `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getDate().toString().padStart(2,'0')} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+            
+            // 触发实时更新模拟
+            simulateRealTimeUpdate(taskId);
+        }
+        
+        // WebSocket模拟和实时数据更新
+        function initWebSocket() {
+            // 模拟WebSocket连接
+            const wsStatus = document.getElementById('wsStatus');
+            wsStatus.textContent = '连接中...';
+            wsStatus.className = 'ml-2 px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-full';
+            
+            // 模拟连接成功
+            setTimeout(() => {
+                wsStatus.textContent = '实时连接';
+                wsStatus.className = 'ml-2 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full';
+                
+                // 开始模拟实时数据更新
+                setInterval(() => {
+                    updateMetrics();
+                }, 3000);
+                
+                // 模拟任务状态更新
+                setInterval(() => {
+                    simulateTaskProgress();
+                }, 5000);
+            }, 1000);
+        }
+        
+        // 更新监控指标
+        function updateMetrics() {
+            // 模拟随机指标变化
+            const cpu = 40 + Math.random() * 20;
+            const memory = 60 + Math.random() * 20;
+            const completion = 80 + Math.random() * 15;
+            const response = 2.5 + Math.random() * 2;
+            
+            document.getElementById('cpuUsage').textContent = cpu.toFixed(0) + '%';
+            document.querySelector('#cpuUsage ~ div > div').style.width = cpu.toFixed(0) + '%';
+            
+            document.getElementById('memoryUsage').textContent = memory.toFixed(0) + '%';
+            document.querySelector('#memoryUsage ~ div > div').style.width = memory.toFixed(0) + '%';
+            
+            document.getElementById('taskCompletion').textContent = completion.toFixed(0) + '%';
+            document.querySelector('#taskCompletion ~ div > div').style.width = completion.toFixed(0) + '%';
+            
+            document.getElementById('avgResponse').textContent = response.toFixed(1) + 's';
+            document.querySelector('#avgResponse ~ div > div').style.width = (response * 20).toFixed(0) + '%';
+            
+            // 更新图表
+            renderTaskComparisonChart();
+        }
+        
+        // 渲染任务对比图表
+        function renderTaskComparisonChart() {
+            const chart = document.getElementById('taskComparisonChart');
+            chart.innerHTML = '';
+            
+            // 模拟3个任务的数据
+            const tasks = [
+                { name: '任务#001', efficiency: 85, color: 'bg-blue-500' },
+                { name: '任务#002', efficiency: 62, color: 'bg-green-500' },
+                { name: '任务#003', efficiency: 45, color: 'bg-yellow-500' }
+            ];
+            
+            tasks.forEach(task => {
+                const bar = document.createElement('div');
+                bar.className = 'flex flex-col items-center flex-1';
+                
+                const value = document.createElement('div');
+                value.className = `${task.color} rounded-t-lg transition-all duration-500`;
+                value.style.height = `${task.efficiency}%`;
+                value.title = `${task.name}: ${task.efficiency}%`;
+                
+                const label = document.createElement('div');
+                label.className = 'text-xs mt-1 text-gray-600';
+                label.textContent = task.name;
+                
+                bar.appendChild(value);
+                bar.appendChild(label);
+                chart.appendChild(bar);
+            });
+        }
+        
+        // 模拟实时更新
+        function simulateRealTimeUpdate(taskId) {
+            // 模拟时间轴项目更新
+            const timelineItems = document.querySelectorAll('.timeline-item');
+            timelineItems.forEach(item => {
+                item.style.opacity = '0.8';
+                setTimeout(() => {
+                    item.style.opacity = '1';
+                }, 300);
+            });
+            
+            // 模拟WebSocket消息
+            const messages = [
+                `任务状态更新: ${taskId} 进度更新`,
+                `AI角色活动: 质检师完成审核`,
+                `系统提示: 新的优化建议已生成`
+            ];
+            
+            messages.forEach((msg, index) => {
+                setTimeout(() => {
+                    console.log('模拟WebSocket消息:', msg);
+                }, index * 1000);
+            });
+        }
+        
+        // 模拟任务进度更新
+        function simulateTaskProgress() {
+            // 随机更新一个任务的进度
+            const tasks = ['task1', 'task2', 'task3'];
+            const randomTask = tasks[Math.floor(Math.random() * tasks.length)];
+            
+            // 更新对应按钮的文本
+            const buttons = document.querySelectorAll('.feishu-header ~ .p-6 .flex-wrap button');
+            buttons.forEach(btn => {
+                if (btn.onclick && btn.onclick.toString().includes(randomTask)) {
+                    const originalText = btn.textContent;
+                    if (randomTask === 'task2') {
+                        const match = originalText.match(/\((\d+)%\)/);
+                        if (match) {
+                            let progress = parseInt(match[1]);
+                            progress = Math.min(95, progress + Math.floor(Math.random() * 10));
+                            btn.textContent = btn.textContent.replace(/\(\d+%\)/, `(${progress}%)`);
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 页面加载后自动展开第一个详情面板作为示例
+        window.addEventListener('DOMContentLoaded', function() {
+            // 自动展开第一个详情面板
+            toggleDetails('detail1');
+            
+            // 初始化WebSocket连接和监控
+            initWebSocket();
+            updateMetrics();
+            renderTaskComparisonChart();
+            
+            // 3秒后显示交互提示
+            setTimeout(() => {
+                document.getElementById('interactionHint').style.opacity = '0';
+                document.getElementById('interactionHint').style.transition = 'opacity 0.5s';
+                document.getElementById('interactionHint').style.opacity = '1';
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

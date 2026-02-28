@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多AI协同系统 - 实时测试体验</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .container {
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            letter-spacing: -0.5px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            padding: 30px;
+            border-bottom: 1px solid #e5e5e7;
+        }
+        
+        .card:last-child {
+            border-bottom: none;
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #1d1d1f;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        h2 i {
+            font-size: 1.8rem;
+        }
+        
+        .status-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .status-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: #555;
+        }
+        
+        .status-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1d1d1f;
+        }
+        
+        .connected {
+            color: #34c759;
+        }
+        
+        .disconnected {
+            color: #ff3b30;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .connect-btn {
+            background-color: #34c759;
+            color: white;
+        }
+        
+        .connect-btn:hover {
+            background-color: #30b453;
+            transform: translateY(-2px);
+        }
+        
+        .disconnect-btn {
+            background-color: #ff3b30;
+            color: white;
+        }
+        
+        .disconnect-btn:hover {
+            background-color: #e7352b;
+            transform: translateY(-2px);
+        }
+        
+        .send-btn {
+            background-color: #007aff;
+            color: white;
+        }
+        
+        .send-btn:hover {
+            background-color: #0062cc;
+            transform: translateY(-2px);
+        }
+        
+        .clear-btn {
+            background-color: #8e8e93;
+            color: white;
+        }
+        
+        .clear-btn:hover {
+            background-color: #7a7a7e;
+            transform: translateY(-2px);
+        }
+        
+        .input-group {
+            margin-top: 20px;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 18px;
+            border: 2px solid #e5e5e7;
+            border-radius: 12px;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 120px;
+            transition: border-color 0.2s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #007aff;
+        }
+        
+        .messages-container {
+            margin-top: 30px;
+        }
+        
+        .messages-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .messages-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e5e5e7;
+            border-radius: 12px;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        
+        .message-item {
+            background: white;
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 15px;
+            border-left: 4px solid #007aff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: #8e8e93;
+        }
+        
+        .message-type {
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .message-time {
+            color: #8e8e93;
+        }
+        
+        .message-content {
+            font-size: 1rem;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        
+        .client-count {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+        
+        .emoji {
+            font-size: 1.5rem;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e5e7;
+            color: #8e8e93;
+            font-size: 0.9rem;
+        }
+        
+        .instructions {
+            background-color: #f0f7ff;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 5px solid #007aff;
+        }
+        
+        .instructions h3 {
+            margin-bottom: 15px;
+            color: #007aff;
+        }
+        
+        .instructions ol {
+            padding-left: 25px;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            header {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .status-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>多AI协同系统实时测试体验</h1>
+            <p class="subtitle">体验WebSocket服务器实时消息推送功能，模拟多AI角色协同工作流程</p>
+        </header>
+        
+        <div class="instructions card">
+            <h3><i class="fas fa-info-circle"></i> 使用说明</h3>
+            <ol>
+                <li><strong>连接服务器</strong>：点击"连接服务器"按钮，建立与WebSocket服务器的连接</li>
+                <li><strong>发送测试消息</strong>：在消息框中输入任意内容，点击"发送消息"按钮</li>
+                <li><strong>查看实时推送</strong>：服务器会自动推送系统状态更新和广播消息</li>
+                <li><strong>多客户端测试</strong>：可以打开多个浏览器标签页同时连接，观察客户端数量变化</li>
+                <li><strong>断开连接</strong>：测试完成后点击"断开连接"按钮</li>
+            </ol>
+            <p><strong>注意</strong>：确保WebSocket服务器已启动（端口8765）。如果无法连接，请检查服务器状态。</p>
+        </div>
+        
+        <div class="card">
+            <h2><i class="fas fa-server"></i> 服务器状态</h2>
+            <div class="status-section">
+                <div class="status-card">
+                    <h3>连接状态</h3>
+                    <div class="status-value" id="connectionStatus">
+                        <span class="disconnected">未连接</span>
+                    </div>
+                    <p id="connectionDetails">等待连接服务器...</p>
+                </div>
+                
+                <div class="status-card">
+                    <h3>在线客户端</h3>
+                    <div class="status-value" id="clientCount">0</div>
+                    <p>当前连接到服务器的客户端数量</p>
+                </div>
+                
+                <div class="status-card">
+                    <h3>消息统计</h3>
+                    <div class="status-value" id="messageCount">0</div>
+                    <p>已接收到的消息总数</p>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button id="connectBtn" class="connect-btn">
+                    <i class="fas fa-plug"></i> 连接服务器
+                </button>
+                <button id="disconnectBtn" class="disconnect-btn" disabled>
+                    <i class="fas fa-unplug"></i> 断开连接
+                </button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2><i class="fas fa-paper-plane"></i> 发送测试消息</h2>
+            <p>输入任意消息内容，点击发送按钮测试消息推送功能：</p>
+            
+            <div class="input-group">
+                <textarea id="messageInput" placeholder="请输入要发送的测试消息...例如：测试多AI协同系统实时消息推送功能"></textarea>
+            </div>
+            
+            <div class="button-group">
+                <button id="sendBtn" class="send-btn" disabled>
+                    <i class="fas fa-paper-plane"></i> 发送消息
+                </button>
+                <button id="clearInputBtn" class="clear-btn">
+                    <i class="fas fa-eraser"></i> 清空输入
+                </button>
+            </div>
+        </div>
+        
+        <div class="card messages-container">
+            <div class="messages-header">
+                <h2><i class="fas fa-comments"></i> 接收到的消息</h2>
+                <div>
+                    <button id="clearMessagesBtn" class="clear-btn">
+                        <i class="fas fa-trash"></i> 清空消息列表
+                    </button>
+                </div>
+            </div>
+            
+            <div id="messagesList" class="messages-list">
+                <div class="message-item welcome-message">
+                    <div class="message-header">
+                        <span class="message-type">系统提示</span>
+                        <span class="message-time" id="currentTime"></span>
+                    </div>
+                    <div class="message-content">
+                        欢迎使用多AI协同系统实时测试页面！连接服务器后，您将看到实时推送的消息。
+                    </div>
+                </div>
+            </div>
+            
+            <div class="client-count">
+                <i class="fas fa-users"></i> 在线客户端: <span id="activeClients">0</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>多AI协同系统 v1.0 | WebSocket服务器测试体验 | 生成时间: <span id="generationTime"></span></p>
+        <p>系统设计规范: 6AI角色协同（总控、拆解、执行、质检、优化、落地） | 实时消息推送协议</p>
+    </div>
+
+    <script>
+        // 全局变量
+        let websocket = null;
+        let connectionStatus = document.getElementById('connectionStatus');
+        let connectionDetails = document.getElementById('connectionDetails');
+        let clientCount = document.getElementById('clientCount');
+        let messageCount = document.getElementById('messageCount');
+        let activeClients = document.getElementById('activeClients');
+        let messagesList = document.getElementById('messagesList');
+        let connectBtn = document.getElementById('connectBtn');
+        let disconnectBtn = document.getElementById('disconnectBtn');
+        let sendBtn = document.getElementById('sendBtn');
+        let messageInput = document.getElementById('messageInput');
+        let clearInputBtn = document.getElementById('clearInputBtn');
+        let clearMessagesBtn = document.getElementById('clearMessagesBtn');
+        let currentTime = document.getElementById('currentTime');
+        let generationTime = document.getElementById('generationTime');
+        
+        // 服务器配置
+        const WS_SERVER_URL = 'ws://localhost:8765';
+        let messageCounter = 0;
+        let clientId = null;
+        
+        // 初始化时间显示
+        function updateTime() {
+            const now = new Date();
+            currentTime.textContent = now.toLocaleTimeString('zh-CN');
+        }
+        
+        // 设置生成时间
+        generationTime.textContent = new Date().toLocaleString('zh-CN');
+        
+        // 更新连接状态
+        function updateConnectionStatus(connected, details = '') {
+            if (connected) {
+                connectionStatus.innerHTML = '<span class="connected">已连接</span>';
+                connectionDetails.textContent = details || '成功连接到WebSocket服务器';
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+                sendBtn.disabled = false;
+                connectBtn.innerHTML = '<i class="fas fa-check-circle"></i> 已连接';
+            } else {
+                connectionStatus.innerHTML = '<span class="disconnected">未连接</span>';
+                connectionDetails.textContent = details || '等待连接服务器...';
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+                sendBtn.disabled = true;
+                connectBtn.innerHTML = '<i class="fas fa-plug"></i> 连接服务器';
+            }
+        }
+        
+        // 添加消息到列表
+        function addMessage(type, content, timestamp = null) {
+            if (!timestamp) {
+                timestamp = new Date();
+            }
+            
+            const messageItem = document.createElement('div');
+            messageItem.className = 'message-item';
+            
+            // 根据消息类型设置边框颜色
+            let borderColor = '#007aff'; // 默认蓝色
+            if (type.includes('welcome')) borderColor = '#34c759'; // 绿色
+            if (type.includes('error')) borderColor = '#ff3b30'; // 红色
+            if (type.includes('system')) borderColor = '#8e8e93'; // 灰色
+            if (type.includes('broadcast')) borderColor = '#ff9500'; // 橙色
+            
+            messageItem.style.borderLeftColor = borderColor;
+            
+            // 格式化时间
+            const timeStr = timestamp instanceof Date ? 
+                timestamp.toLocaleTimeString('zh-CN') : 
+                new Date(timestamp).toLocaleTimeString('zh-CN');
+            
+            // 格式化内容
+            let displayContent = content;
+            if (typeof content === 'object') {
+                try {
+                    displayContent = JSON.stringify(content, null, 2);
+                } catch (e) {
+                    displayContent = String(content);
+                }
+            }
+            
+            messageItem.innerHTML = `
+                <div class="message-header">
+                    <span class="message-type">${type}</span>
+                    <span class="message-time">${timeStr}</span>
+                </div>
+                <div class="message-content">
+                    <pre style="white-space: pre-wrap; font-family: inherit; margin: 0;">${displayContent}</pre>
+                </div>
+            `;
+            
+            // 添加到列表顶部
+            const welcomeMessage = document.querySelector('.welcome-message');
+            if (welcomeMessage && messagesList.firstChild === welcomeMessage) {
+                messagesList.insertBefore(messageItem, welcomeMessage.nextSibling);
+            } else {
+                messagesList.insertBefore(messageItem, messagesList.firstChild);
+            }
+            
+            // 更新消息计数
+            messageCounter++;
+            messageCount.textContent = messageCounter;
+            
+            // 自动滚动到最新消息
+            messagesList.scrollTop = 0;
+        }
+        
+        // 处理接收到的消息
+        function handleMessage(data) {
+            try {
+                // 尝试解析JSON
+                const message = JSON.parse(data);
+                
+                // 根据消息类型处理
+                switch (message.type) {
+                    case 'welcome':
+                        clientId = message.data?.client_id || 'unknown';
+                        addMessage('欢迎消息', `客户端ID: ${clientId}，服务器版本: ${message.data?.server_version || '1.0'}`, message.timestamp);
+                        updateConnectionStatus(true, `客户端ID: ${clientId}`);
+                        break;
+                        
+                    case 'system_metrics':
+                        // 更新客户端数量
+                        if (message.data?.active_connections !== undefined) {
+                            clientCount.textContent = message.data.active_connections;
+                            activeClients.textContent = message.data.active_connections;
+                        }
+                        addMessage('系统指标', message.data, message.timestamp);
+                        break;
+                        
+                    case 'broadcast':
+                        addMessage('广播消息', message.data, message.timestamp);
+                        break;
+                        
+                    case 'task_status_update':
+                        addMessage('任务状态更新', message.data, message.timestamp);
+                        break;
+                        
+                    case 'echo':
+                        addMessage('服务器响应', message.data, message.timestamp);
+                        break;
+                        
+                    default:
+                        addMessage('未知类型', message, message.timestamp);
+                }
+            } catch (e) {
+                // 如果不是JSON，直接显示文本
+                addMessage('文本消息', data);
+            }
+        }
+        
+        // 连接WebSocket服务器
+        function connectWebSocket() {
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                addMessage('系统提示', '已经连接到服务器');
+                return;
+            }
+            
+            updateConnectionStatus(false, '正在连接服务器...');
+            
+            try {
+                websocket = new WebSocket(WS_SERVER_URL);
+                
+                websocket.onopen = function(event) {
+                    addMessage('系统提示', 'WebSocket连接已建立');
+                };
+                
+                websocket.onmessage = function(event) {
+                    handleMessage(event.data);
+                };
+                
+                websocket.onerror = function(event) {
+                    addMessage('错误', 'WebSocket连接错误');
+                    updateConnectionStatus(false, '连接错误，请检查服务器状态');
+                };
+                
+                websocket.onclose = function(event) {
+                    addMessage('系统提示', `WebSocket连接已关闭 (代码: ${event.code})`);
+                    updateConnectionStatus(false, '连接已断开');
+                    websocket = null;
+                    clientId = null;
+                };
+                
+            } catch (error) {
+                addMessage('错误', `连接失败: ${error.message}`);
+                updateConnectionStatus(false, `连接失败: ${error.message}`);
+            }
+        }
+        
+        // 断开WebSocket连接
+        function disconnectWebSocket() {
+            if (websocket) {
+                if (websocket.readyState === WebSocket.OPEN) {
+                    websocket.close(1000, '用户主动断开连接');
+                }
+                websocket = null;
+                clientId = null;
+            }
+            updateConnectionStatus(false, '已断开连接');
+            addMessage('系统提示', '已主动断开与服务器的连接');
+        }
+        
+        // 发送消息
+        function sendMessage() {
+            if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+                addMessage('错误', '未连接到服务器，无法发送消息');
+                return;
+            }
+            
+            const message = messageInput.value.trim();
+            if (!message) {
+                addMessage('系统提示', '消息内容不能为空');
+                return;
+            }
+            
+            try {
+                // 构建标准消息格式
+                const messageData = {
+                    type: 'test_message',
+                    data: {
+                        content: message,
+                        client_id: clientId || 'unknown',
+                        timestamp: new Date().toISOString()
+                    }
+                };
+                
+                websocket.send(JSON.stringify(messageData));
+                addMessage('发送的消息', messageData.data);
+                messageInput.value = '';
+                
+            } catch (error) {
+                addMessage('错误', `发送消息失败: ${error.message}`);
+            }
+        }
+        
+        // 清空输入框
+        function clearInput() {
+            messageInput.value = '';
+            messageInput.focus();
+        }
+        
+        // 清空消息列表
+        function clearMessages() {
+            messagesList.innerHTML = '';
+            const welcomeMessage = document.createElement('div');
+            welcomeMessage.className = 'message-item welcome-message';
+            welcomeMessage.innerHTML = `
+                <div class="message-header">
+                    <span class="message-type">系统提示</span>
+                    <span class="message-time">${new Date().toLocaleTimeString('zh-CN')}</span>
+                </div>
+                <div class="message-content">
+                    消息列表已清空。
+                </div>
+            `;
+            messagesList.appendChild(welcomeMessage);
+            
+            messageCounter = 0;
+            messageCount.textContent = '0';
+        }
+        
+        // 发送测试消息序列
+        function sendTestSequence() {
+            if (!websocket || websocket.readyState !== WebSocket.OPEN) {
+                return;
+            }
+            
+            // 发送测试任务状态更新
+            const testTasks = [
+                {
+                    type: 'task_status_update',
+                    data: {
+                        task_id: 'test_task_001',
+                        stage: 'precheck',
+                        status: 'started',
+                        timestamp: new Date().toISOString(),
+                        details: { message: '预审阶段开始' }
+                    }
+                },
+                {
+                    type: 'task_status_update',
+                    data: {
+                        task_id: 'test_task_001',
+                        stage: 'execution',
+                        status: 'completed',
+                        timestamp: new Date().toISOString(),
+                        details: { message: '执行阶段完成', quality_score: 8.5 }
+                    }
+                }
+            ];
+            
+            testTasks.forEach((task, index) => {
+                setTimeout(() => {
+                    if (websocket && websocket.readyState === WebSocket.OPEN) {
+                        websocket.send(JSON.stringify(task));
+                        addMessage('测试任务', task.data);
+                    }
+                }, index * 1000);
+            });
+        }
+        
+        // 事件监听器
+        connectBtn.addEventListener('click', connectWebSocket);
+        disconnectBtn.addEventListener('click', disconnectWebSocket);
+        sendBtn.addEventListener('click', sendMessage);
+        
+        clearInputBtn.addEventListener('click', clearInput);
+        clearMessagesBtn.addEventListener('click', clearMessages);
+        
+        messageInput.addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.key === 'Enter') {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // 自动连接（可选，注释掉以避免自动连接）
+        // setTimeout(() => {
+        //     addMessage('系统提示', '正在自动连接服务器...');
+        //     connectWebSocket();
+        // }, 1000);
+        
+        // 更新时间
+        setInterval(updateTime, 1000);
+        updateTime();
+        
+        // 页面加载完成提示
+        window.addEventListener('load', function() {
+            addMessage('系统提示', '实时测试页面已加载完成，点击"连接服务器"按钮开始体验');
+        });
+    </script>
+</body>
+</html>
